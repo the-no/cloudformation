@@ -2,6 +2,7 @@ package cloudformation
 
 type Request struct {
 	Capabilities     []string `json:"capabilities"`
+	Platform         string   `json:"platform"`
 	DisableRollback  bool     `json:"disableRollback"`
 	NotificationARNs []string `json:"notificationARNs"`
 	Parameters       []struct {

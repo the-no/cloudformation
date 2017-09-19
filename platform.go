@@ -12,15 +12,24 @@ type Platform interface {
 	PseudoParameter(name string, req *Request) (interface{}, error)
 }
 
+func getplatform(name string) Platform {
+	switch name {
+	case "AWS":
+		return &AWSPlatform{}
+	default:
+		return &AWSPlatform{}
+	}
+}
+
 type AWSPlatform struct {
 }
 
-func (c *AWSPlatform) NewClinet(typ string, s *session.Session) ClinetInterface {
+func (c *AWSPlatform) NewClinet(typ string, s *session.Session) (ClinetInterface, error) {
 	switch typ {
 	case "EC2":
-		return ec2.New(s)
+		return ec2.New(s), nil
 	}
-	return nil
+	return nil, errors.New("Invail Type[" + typ + "] !")
 }
 
 func (c *AWSPlatform) PseudoParameter(name string, req *Request) (interface{}, error) {

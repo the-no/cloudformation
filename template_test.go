@@ -2,7 +2,7 @@ package cloudformation
 
 import (
 	"encoding/json"
-	//"fmt"
+	"github.com/the-no/aws-sdk-go/aws/session"
 	. "gopkg.in/check.v1"
 	"testing"
 	"time"
@@ -10,7 +10,7 @@ import (
 
 var inputbuf = `{
   "AWSTemplateFormatVersion" : "2010-09-09",
-
+  "Platform":"AWS",
   "Mappings" : {
     "RegionMap" : {
       "us-east-1"      : { "AMI" : "ami-7f418316", "TestAz" : "us-east-1a" },
@@ -123,7 +123,7 @@ func TestTemplate1(t *testing.T) {
 	req := &Request{}
 	err = json.Unmarshal([]byte(requestbuf), req)
 	t.Log("---------", err)
-	fm, err := tmp.CreateFormation(req)
+	fm, err := tmp.CreateFormation(req, session.New())
 	t.Logf("%#v,\n%#v\n", fm.Conditions, fm.Parameters)
 
 	fm.StartResourceUnits()

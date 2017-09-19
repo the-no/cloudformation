@@ -66,7 +66,7 @@ func (r RefFunc) Exec(fm *Formation) (interface{}, error) {
 		}
 		return r, nil
 	}
-	return fm.PseudoParameter(r.Name)
+	return fm.Platform.PseudoParameter(r.Name, fm.Request)
 }
 func (r RefFunc) DependResource() []string {
 	return []string{r.Name}

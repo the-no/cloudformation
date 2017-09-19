@@ -4,16 +4,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	//"strings"
+	"github.com/the-no/aws-sdk-go/aws"
+	"github.com/the-no/aws-sdk-go/aws/session"
 	"sync"
 )
 
 type Formation struct {
 	Request                  *Request
+	Platform                 Platform
+	Session                  *session.Session
 	AWSTemplateFormatVersion string
 	Parameters               map[string]*ParameterValue
 	Conditions               map[string]bool
 	Mappings                 map[string]*Mapping
+
+	Input interface{}
+	Out   interface{}
+	Ref   aws.Referencer
 
 	Resources map[string]*ResourceUnit
 	Outputs   map[string]interface{}
@@ -22,7 +29,6 @@ type Formation struct {
 func (self *Formation) StartResourceUnits() {
 	for _, v := range self.Resources {
 		go startResourceUnit(self, v)
-		break
 	}
 }
 
@@ -49,7 +55,6 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 				key := l.blockKey()
 				if isFunc(key) {
 					fjson := l.readBlock()
-					fmt.Println(string(fjson))
 					f, err := unmarshalFunc(fjson)
 					if err != nil {
 						return nil, nil, err
@@ -84,7 +89,7 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 	return data, nil, nil
 }
 
-func (self *Formation) PseudoParameter(name string) (string, error) {
+/*func (self *Formation) PseudoParameter(name string) (string, error) {
 
 	switch name {
 	case "AWS::Region":
@@ -98,7 +103,7 @@ func (self *Formation) PseudoParameter(name string) (string, error) {
 	case "AWS::AccountId":
 	}
 	return "", errors.New("Invail Parameter")
-}
+}*/
 
 type ParameterValue struct {
 	Type  string
@@ -153,10 +158,22 @@ func startResourceUnit(fm *Formation, r *ResourceUnit) {
 	}
 
 	data, depends, err := fm.evalStructExpr(r.Resource.Properties)
-	fmt.Println("+++++++++++++++++", string(data), depends, err)
+	if err != nil {
+		r.Err = errors.New("Eval Struct Expr Failed. " + err.Error())
+		r.cond.Broadcast()
+	}
+	fmt.Println(depends, err, data)
+	cli, err := fm.Platform.NewClinet("EC2", fm.Session)
+	if err != nil {
+		r.Err = errors.New("Create Request Clinet Failed. " + err.Error())
+		r.cond.Broadcast()
+	}
+
+	in, out, ref, err := cli.CreateResource(r.Resource.Type, data)
+	r.Input = in
+	r.OutPut = out
+	r.Ref = ref
+	r.cond.Broadcast()
+	fmt.Println(in, out, ref, err)
 	return
-}
-
-func getplatform(resourcetype string) {
-
 }

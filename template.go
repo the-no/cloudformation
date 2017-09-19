@@ -2,13 +2,9 @@ package cloudformation
 
 import (
 	"encoding/json"
-	//"fmt"
-	//"io/ioutil"
 	"errors"
-	//	"reflect"
+	"github.com/the-no/aws-sdk-go/aws/session"
 	"regexp"
-	//"strings"
-	//	"sync"
 )
 
 // NewTemplate returns a new empty Template initialized with some
@@ -35,12 +31,14 @@ type Template struct {
 	Conditions               map[string]*BoolExpr         `json:",omitempty"`
 }
 
-func (t *Template) CreateFormation(req *Request) (*Formation, error) {
+func (t *Template) CreateFormation(req *Request, s *session.Session) (*Formation, error) {
 	fm := &Formation{
 		Parameters: make(map[string]*ParameterValue),
 		Resources:  make(map[string]*ResourceUnit),
 		Conditions: make(map[string]bool),
 		Mappings:   t.Mappings,
+		Platform:   getplatform(req.Platform),
+		Session:    s,
 	}
 
 	for _, v := range req.Parameters {
