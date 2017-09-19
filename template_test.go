@@ -112,22 +112,22 @@ func TestTemplate1(t *testing.T) {
 	tmp := NewTemplate()
 	err := json.Unmarshal([]byte(inputbuf), tmp)
 	t.Log("---------", err)
-	for k, v := range tmp.Resources {
+	/*	for k, v := range tmp.Resources {
 		t.Log(k, v.Type, string(v.Properties))
-	}
+	}*/
 
-	for k, v := range tmp.Conditions {
+	/*	for k, v := range tmp.Conditions {
 		t.Logf("%s ,%#v", k, v)
-	}
+	}*/
 
 	req := &Request{}
 	err = json.Unmarshal([]byte(requestbuf), req)
 	t.Log("---------", err)
-	fm := tmp.CreateFormation(req)
+	fm, err := tmp.CreateFormation(req)
 	t.Logf("%#v,\n%#v\n", fm.Conditions, fm.Parameters)
 
 	fm.StartResourceUnits()
 	//data, err := json.Marshal(tmp)
 	//	t.Log(string(data))
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 }

@@ -54,9 +54,8 @@ func (x *StringExpr) UnmarshalJSON(data []byte) error {
 	// function actually works in the boolean context
 	funcCall, err2 := unmarshalFunc(data)
 	if err2 == nil {
-		stringFunc, ok := funcCall.(Stringable)
-		if ok {
-			x.Func = funcCall.(StringFunc)
+		if stringFunc, ok := funcCall.(Stringable); ok {
+			x.Func = stringFunc.(StringFunc)
 			return nil
 		}
 	} else if unknownFunctionErr, ok := err2.(UnknownFunctionError); ok {

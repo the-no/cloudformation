@@ -28,7 +28,7 @@ func (f GetAZsFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r GetAZsFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r GetAZsFunc) DependResource() []string {
 	return nil
 }
 

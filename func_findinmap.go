@@ -1,6 +1,10 @@
 package cloudformation
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+	//"fmt"
+)
 
 // FindInMap returns a new instance of FindInMapFunc.
 func FindInMap(mapName string, topLevelKey Stringable, secondLevelKey Stringable) *StringExpr {
@@ -55,11 +59,43 @@ func (f FindInMapFunc) String() *StringExpr {
 	return &StringExpr{Func: f}
 }
 
-func (f FindInMapFunc) Exec(fm *Formation) (interface{}, error) {
+func (f FindInMapFunc) Exec(fm *Formation) (v interface{}, err error) {
 
-	return "", nil
+	if mapping, ok := fm.Mappings[f.MapName]; ok {
+		var topkey, seckey string = f.TopLevelKey.Literal, f.SecondLevelKey.Literal
+		if f.TopLevelKey.Func != nil {
+			tv, err := f.TopLevelKey.Func.Exec(fm)
+			if err != nil {
+				return "", errors.New("Exec FindInMapFunc Faid In Eval TopLevelKey. " + err.Error())
+			}
+			if topkey, ok = tv.(string); !ok {
+				return "", errors.New("Exec FindInMapFunc Faid In Eval TopLevelKey. " + err.Error())
+			}
+		}
+		if f.SecondLevelKey.Func != nil {
+			sv, err := f.SecondLevelKey.Func.Exec(fm)
+			if err != nil {
+				return "", errors.New("Exec FindInMapFunc Faid In Eval SecondLevelKey. " + err.Error())
+			}
+			if seckey, ok = sv.(string); !ok {
+				return "", errors.New("Exec FindInMapFunc Faid In Eval TopLevelKey. " + err.Error())
+			}
+		}
+		tmap := map[string]map[string]string(*mapping)
+		if smap, ok := tmap[topkey]; ok {
+			if v, ok = smap[seckey]; ok {
+				return v, nil
+			} else {
+				return "", errors.New("Exec FindInMapFunc Faid In Not Found SecondLevelKey[" + seckey + "].")
+			}
+		} else {
+			return "", errors.New("Exec FindInMapFunc Faid In Not Found TopLevelKey[" + topkey + "].")
+		}
+	}
+	return nil, errors.New("No Found Map[" + f.MapName + "]")
+
 }
-func (r FindInMapFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r FindInMapFunc) DependResource() []string {
 	return nil
 }
 

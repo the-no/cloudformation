@@ -24,7 +24,7 @@ func (f Base64Func) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r Base64Func) DependResource(fm *Formation) []*ResourceUnit {
+func (r Base64Func) DependResource() []string {
 	return nil
 }
 

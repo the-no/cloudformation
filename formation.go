@@ -2,12 +2,9 @@ package cloudformation
 
 import (
 	"encoding/json"
-	"fmt"
-	//"io/ioutil"
 	"errors"
-	//	"reflect"
-	//"regexp"
-	"strings"
+	"fmt"
+	//"strings"
 	"sync"
 )
 
@@ -27,129 +24,8 @@ func (self *Formation) StartResourceUnits() {
 		go startResourceUnit(self, v)
 		break
 	}
-
 }
 
-/*func (self *Formation) callFunc(f Func) (interface{}, error) {
-
-	switch f.(type) {
-	case RefFunc:
-	case JoinFunc:
-	case EqualsFunc:
-	case FindInMapFunc:
-		findinmap := f.(FindInMapFunc)
-		return self.findinmapFunc(findinmap)
-	default:
-	}
-	return nil, nil
-}
-*/
-/*func (self *Formation) funcDepend(f Func) []*ResourceUnit {
-
-	depend := []*ResourceUnit{}
-	switch f.(type) {
-	case JoinFunc:
-	case EqualsFunc:
-		equals := f.(EqualsFunc)
-		if equals.Value1.Func != nil {
-			dps := self.funcDepend(equals.Value1.Func)
-			depend = append(depend, dps...)
-		}
-		if equals.Value2.Func != nil {
-			dps := self.funcDepend(equals.Value2.Func)
-			depend = append(depend, dps...)
-		}
-	case FindInMapFunc:
-		findinmap := f.(FindInMapFunc)
-		if findinmap.TopLevelKey.Func != nil {
-			dps := self.funcDepend(findinmap.TopLevelKey.Func)
-			depend = append(depend, dps...)
-		}
-		if findinmap.SecondLevelKey.Func != nil {
-			dps := self.funcDepend(findinmap.SecondLevelKey)
-			depend = append(depend, dps...)
-		}
-	default:
-	}
-	return nil, nil
-}*/
-
-/*func (self *Formation) refFunc(f RefFunc) (string, error) {
-	if v, ok := self.Parameters[f.Name]; ok {
-		return v.Value, nil
-	}
-
-	if v, ok := self.Resources[f.Name]; ok {
-		if err := v.Wait(); err != nil {
-			return "", err
-		}
-		return "resval", nil
-	}
-	return self.PseudoParameter(f.Name)
-}*/
-
-/*func (self *Formation) equalsFunc(f EqualsFunc) (bool, error) {
-
-}
-
-func (self *Formation) findinmapFunc(f FindInMapFunc) (string, error) {
-
-	topkey, err := self.evalStringExpr(&f.TopLevelKey)
-	if err != nil {
-		return "", err
-	}
-
-	seckey, err := self.evalStringExpr(&f.SecondLevelKey)
-	if err != nil {
-		return "", err
-	}
-	if mapping, ok := self.Mappings[f.MapName]; ok {
-		topmap := map[string]map[string]string(*mapping)
-		if secmap, ok := topmap[topkey]; ok {
-			if v, ok := secmap[seckey]; ok {
-				return v, nil
-			}
-			return "", errors.New(seckey + " No Found In Second Map[" + f.MapName + "]!")
-		}
-		return "", errors.New(topkey + " No Found In Top Map[" + f.MapName + "]!")
-	}
-	return "", errors.New("Map[" + f.MapName + "]  No Found!")
-}
-*/
-/*func (self *Formation) evalStringExpr(expr *StringExpr) (string, error) {
-	if expr.Func != nil {
-		result, err := expr.Func.Exec(self)
-		if err != nil {
-			return "", err
-		}
-		return result.(string), nil
-	}
-	return expr.Literal, nil
-}*/
-
-/*func (self *Formation) evalIntegerExpr(expr *IntegerExpr) (int64, error) {
-	if expr.Func != nil {
-		result, err := expr.Func.Exec(self)
-		if err != nil {
-			return 0, err
-		}
-		return result.(int64), nil
-	}
-	return expr.Literal, nil
-}
-*/
-/*func (self *Formation) evalBoolExpr(expr *BoolExpr) (bool, error) {
-
-	if expr.Func != nil {
-		result, err := expr.Func.Exec(self)
-		if err != nil {
-			return false, err
-		}
-		return result.(bool), nil
-	}
-	return expr.Literal, nil
-}
-*/
 func (self *Formation) Condition(c string) bool {
 
 	if v, ok := self.Conditions[c]; ok {
@@ -163,7 +39,7 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 	sdata := []byte(s)
 	instring := false
 	l := newLexer(sdata)
-	depend := []*ResourceUnit{}
+	depend := []string{}
 	data := make([]byte, 0, len(sdata))
 
 	for ch := l.peekChar(); ch != 0; ch = l.peekChar() {
@@ -173,6 +49,7 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 				key := l.blockKey()
 				if isFunc(key) {
 					fjson := l.readBlock()
+					fmt.Println(string(fjson))
 					f, err := unmarshalFunc(fjson)
 					if err != nil {
 						return nil, nil, err
@@ -183,7 +60,7 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 					}
 					vjson, err := json.Marshal(val)
 					data = append(data, vjson...)
-					depend = append(depend, f.DependResource(self)...)
+					depend = append(depend, f.DependResource()...)
 				} else {
 					data = append(data, ch)
 				}
@@ -259,37 +136,27 @@ func (self *ResourceUnit) Wait() error {
 }
 
 func startResourceUnit(fm *Formation, r *ResourceUnit) {
-	if cond, ok := fm.Conditions[r.Resource.Condition]; !cond || !ok {
+	if cond, ok := fm.Conditions[r.Resource.Condition]; ok && !cond {
 		r.Err = errors.New("Condition [" + r.Resource.Condition + "] Is False OR Not Found In Create " + r.Name + "!")
 		r.cond.Broadcast()
 		return
 	}
 
 	for _, depend := range r.Resource.DependsOn {
-		if err := r.Wait(); err != nil {
-			r.Err = errors.New(r.Name + " Depend On [" + depend + "] " + err.Error() + "!")
-			r.cond.Broadcast()
-			return
+		if res, ok := fm.Resources[depend]; ok {
+			if err := res.Wait(); err != nil {
+				r.Err = errors.New(r.Name + " Depend On [" + depend + "] " + err.Error() + "!")
+				r.cond.Broadcast()
+				return
+			}
 		}
 	}
-	data, _, err := fm.evalStructExpr(r.Resource.Properties)
-	fmt.Println(string(data), err)
+
+	data, depends, err := fm.evalStructExpr(r.Resource.Properties)
+	fmt.Println("+++++++++++++++++", string(data), depends, err)
 	return
 }
 
 func getplatform(resourcetype string) {
 
-}
-
-//func getResourceCreateParam(platform, product, resource string) {
-func getResourceCreateParam(resourcetype string) (interface{}, error) {
-
-	types := strings.Split(resourcetype, "::")
-	switch types[0] {
-	case "ALIYUN":
-	case "AWS":
-		getAWSResourceCreateParam(types[1], types[2])
-	case "":
-	}
-	return nil, errors.New("Invalid Platform [" + types[0] + "]")
 }

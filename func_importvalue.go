@@ -43,7 +43,7 @@ func (f ImportValueFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r ImportValueFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r ImportValueFunc) DependResource() []string {
 	return nil
 }
 

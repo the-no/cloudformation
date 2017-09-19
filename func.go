@@ -9,7 +9,7 @@ import (
 // function calls.
 type Func interface {
 	Exec(fm *Formation) (interface{}, error)
-	DependResource(fm *Formation) []*ResourceUnit
+	DependResource() []string
 }
 
 // BoolFunc is an interface provided by objects that represent Cloudformation

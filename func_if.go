@@ -112,7 +112,7 @@ func (f IfFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r IfFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r IfFunc) DependResource() []string {
 	return nil
 }
 

@@ -58,13 +58,13 @@ func (t *Template) CreateFormation(req *Request) (*Formation, error) {
 		return nil, err
 	}
 
-	for k, v := range t.Resources {
-		for _, v := range v.DependsOn {
-			if _, ok := t.Resources[k]; !ok {
-				return nil, errors.New("Found Resource [" + k + "] Faild!")
+	for k, r := range t.Resources {
+		for _, d := range r.DependsOn {
+			if _, ok := t.Resources[d]; !ok {
+				return nil, errors.New("Found Resource [" + d + "] Faild!")
 			}
 		}
-		fm.Resources[k] = NewResourceUnit(fm, k, v)
+		fm.Resources[k] = NewResourceUnit(fm, k, r)
 	}
 	return fm, nil
 }

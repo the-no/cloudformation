@@ -1,5 +1,9 @@
 package cloudformation
 
+/*import (
+	"fmt"
+)*/
+
 // Ref returns a new instance of RefFunc that refers to name.
 func Ref(name string) RefFunc {
 	return RefFunc{Name: name}
@@ -52,7 +56,6 @@ func (r RefFunc) StringList() *StringListExpr {
 }
 
 func (r RefFunc) Exec(fm *Formation) (interface{}, error) {
-
 	if v, ok := fm.Parameters[r.Name]; ok {
 		return v.Value, nil
 	}
@@ -61,15 +64,12 @@ func (r RefFunc) Exec(fm *Formation) (interface{}, error) {
 		if err := v.Wait(); err != nil {
 			return "", err
 		}
-		return "resval", nil
+		return r, nil
 	}
 	return fm.PseudoParameter(r.Name)
 }
-func (r RefFunc) DependResource(fm *Formation) []*ResourceUnit {
-	if res, ok := fm.Resources[r.Name]; ok {
-		return []*ResourceUnit{res}
-	}
-	return nil
+func (r RefFunc) DependResource() []string {
+	return []string{r.Name}
 }
 
 var _ Func = RefFunc{}

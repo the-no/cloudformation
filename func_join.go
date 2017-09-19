@@ -55,7 +55,7 @@ func (f JoinFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r JoinFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r JoinFunc) DependResource() []string {
 	return nil
 }
 

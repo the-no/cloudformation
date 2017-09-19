@@ -81,13 +81,13 @@ func (f EqualsFunc) Exec(fm *Formation) (interface{}, error) {
 	return v1 == v2, nil
 }
 
-func (r EqualsFunc) DependResource(fm *Formation) []*ResourceUnit {
-	dps := []*ResourceUnit{}
+func (r EqualsFunc) DependResource() []string {
+	dps := []string{}
 	if r.Value1.Func != nil {
-		dps = append(dps, r.Value1.Func.DependResource(fm)...)
+		dps = append(dps, r.Value1.Func.DependResource()...)
 	}
 	if r.Value2.Func != nil {
-		dps = append(dps, r.Value1.Func.DependResource(fm)...)
+		dps = append(dps, r.Value1.Func.DependResource()...)
 	}
 	return dps
 }

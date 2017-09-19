@@ -49,7 +49,7 @@ func (f GetAttFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r GetAttFunc) DependResource(fm *Formation) []*ResourceUnit {
+func (r GetAttFunc) DependResource() []string {
 	return nil
 }
 
