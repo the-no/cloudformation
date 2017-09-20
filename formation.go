@@ -17,18 +17,19 @@ type Formation struct {
 	Parameters               map[string]*ParameterValue
 	Conditions               map[string]bool
 	Mappings                 map[string]*Mapping
-
-	Input interface{}
-	Out   interface{}
-	Ref   aws.Referencer
-
-	Resources map[string]*ResourceUnit
-	Outputs   map[string]interface{}
+	Callback                 []string
+	Resources                map[string]*ResourceUnit
+	Outputs                  map[string]interface{}
 }
 
 func (self *Formation) StartResourceUnits() {
+	var wg sync.WaitGroup
 	for _, v := range self.Resources {
-		go startResourceUnit(self, v)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			startResourceUnit(self, v)
+		}()
 	}
 }
 
@@ -40,12 +41,12 @@ func (self *Formation) Condition(c string) bool {
 	return false
 }
 
-func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUnit, error) {
+func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, error) {
 
 	sdata := []byte(s)
 	instring := false
 	l := newLexer(sdata)
-	depend := []string{}
+	//depend := []string{}
 	data := make([]byte, 0, len(sdata))
 
 	for ch := l.peekChar(); ch != 0; ch = l.peekChar() {
@@ -57,15 +58,15 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 					fjson := l.readBlock()
 					f, err := unmarshalFunc(fjson)
 					if err != nil {
-						return nil, nil, err
+						return nil, err
 					}
 					val, err := f.Exec(self)
 					if err != nil {
-						return nil, nil, err
+						return nil, err
 					}
 					vjson, err := json.Marshal(val)
 					data = append(data, vjson...)
-					depend = append(depend, f.DependResource()...)
+					//depend = append(depend, f.DependResource()...)
 				} else {
 					data = append(data, ch)
 				}
@@ -86,24 +87,8 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, []*ResourceUni
 	}
 
 	fmt.Println("struct :", string(data))
-	return data, nil, nil
+	return data, nil
 }
-
-/*func (self *Formation) PseudoParameter(name string) (string, error) {
-
-	switch name {
-	case "AWS::Region":
-		return "us-west-2", nil
-	case "AWS::StackId":
-	case "AWS::StackName":
-		return self.Request.StackName, nil
-	case "AWS::NoValue":
-		return "", nil
-		//	case "AWS::NotificationARNs":
-	case "AWS::AccountId":
-	}
-	return "", errors.New("Invail Parameter")
-}*/
 
 type ParameterValue struct {
 	Type  string
@@ -120,6 +105,10 @@ type ResourceUnit struct {
 	Result   interface{}
 	Callback bool
 	cond     *sync.Cond
+
+	Input  interface{}
+	Output interface{}
+	Ref    aws.Referencer
 }
 
 func NewResourceUnit(fm *Formation, name string, r *Resource) *ResourceUnit {
@@ -140,11 +129,12 @@ func (self *ResourceUnit) Wait() error {
 	return self.Err
 }
 
-func startResourceUnit(fm *Formation, r *ResourceUnit) {
+func startResourceUnit(fm *Formation, r *ResourceUnit) error {
 	if cond, ok := fm.Conditions[r.Resource.Condition]; ok && !cond {
 		r.Err = errors.New("Condition [" + r.Resource.Condition + "] Is False OR Not Found In Create " + r.Name + "!")
+		r.Done = true
 		r.cond.Broadcast()
-		return
+		return r.Err
 	}
 
 	for _, depend := range r.Resource.DependsOn {
@@ -152,28 +142,28 @@ func startResourceUnit(fm *Formation, r *ResourceUnit) {
 			if err := res.Wait(); err != nil {
 				r.Err = errors.New(r.Name + " Depend On [" + depend + "] " + err.Error() + "!")
 				r.cond.Broadcast()
-				return
+				return r.Err
 			}
 		}
 	}
 
-	data, depends, err := fm.evalStructExpr(r.Resource.Properties)
+	data, err := fm.evalStructExpr(r.Resource.Properties)
 	if err != nil {
 		r.Err = errors.New("Eval Struct Expr Failed. " + err.Error())
 		r.cond.Broadcast()
 	}
-	fmt.Println(depends, err, data)
+
 	cli, err := fm.Platform.NewClinet("EC2", fm.Session)
 	if err != nil {
 		r.Err = errors.New("Create Request Clinet Failed. " + err.Error())
 		r.cond.Broadcast()
 	}
 
-	in, out, ref, err := cli.CreateResource(r.Resource.Type, data)
-	r.Input = in
-	r.OutPut = out
-	r.Ref = ref
+	r.Input, r.Output, r.Ref, err = cli.CreateResource(r.Resource.Type, data)
+	if err != nil {
+		r.Err = errors.New(r.Name + "Create Resource Failed. " + err.Error())
+	}
 	r.cond.Broadcast()
-	fmt.Println(in, out, ref, err)
-	return
+	fm.Callback = append(fm.Callback, r.Name)
+	return nil
 }

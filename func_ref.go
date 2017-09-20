@@ -68,9 +68,10 @@ func (r RefFunc) Exec(fm *Formation) (interface{}, error) {
 	}
 	return fm.Platform.PseudoParameter(r.Name, fm.Request)
 }
-func (r RefFunc) DependResource() []string {
+
+/*func (r RefFunc) DependResource() []string {
 	return []string{r.Name}
-}
+}*/
 
 var _ Func = RefFunc{}
 var _ BoolFunc = RefFunc{}

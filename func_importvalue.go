@@ -43,9 +43,10 @@ func (f ImportValueFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r ImportValueFunc) DependResource() []string {
+
+/*func (r ImportValueFunc) DependResource() []string {
 	return nil
 }
-
+*/
 var _ StringFunc = ImportValueFunc{}
 var _ StringListFunc = ImportValueFunc{}

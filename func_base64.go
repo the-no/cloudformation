@@ -24,9 +24,10 @@ func (f Base64Func) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r Base64Func) DependResource() []string {
+
+/*func (r Base64Func) DependResource() []string {
 	return nil
-}
+}*/
 
 var _ Stringable = Base64Func{} // Base64Func must implement Stringable
 var _ StringFunc = Base64Func{} // Base64Func must implement StringFunc

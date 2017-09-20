@@ -28,9 +28,10 @@ func (f GetAZsFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r GetAZsFunc) DependResource() []string {
+
+/*func (r GetAZsFunc) DependResource() []string {
 	return nil
-}
+}*/
 
 // Note: Fn::GetAZs does *not* implement StringFunc.
 var _ StringListFunc = GetAZsFunc{} // GetAZsFunc must implement StringListFunc

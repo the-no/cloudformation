@@ -112,9 +112,10 @@ func (f IfFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r IfFunc) DependResource() []string {
+
+/*func (r IfFunc) DependResource() []string {
 	return nil
-}
+}*/
 
 var _ StringFunc = IfFunc{}     // IfFunc must implement StringFunc
 var _ StringListFunc = IfFunc{} // IfFunc must implement StringListFunc

@@ -65,8 +65,9 @@ func (f SelectFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r SelectFunc) DependResource() []string {
+
+/*func (r SelectFunc) DependResource() []string {
 	return nil
 }
-
+*/
 var _ StringFunc = SelectFunc{} // SelectFunc must implement StringFunc

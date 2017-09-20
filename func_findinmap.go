@@ -95,9 +95,10 @@ func (f FindInMapFunc) Exec(fm *Formation) (v interface{}, err error) {
 	return nil, errors.New("No Found Map[" + f.MapName + "]")
 
 }
-func (r FindInMapFunc) DependResource() []string {
+
+/*func (r FindInMapFunc) DependResource() []string {
 	return nil
-}
+}*/
 
 var _ Stringable = FindInMapFunc{} // FindInMapFunc must implement Stringable
 var _ StringFunc = FindInMapFunc{} // FindInMapFunc must implement StringFunc

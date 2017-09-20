@@ -81,7 +81,7 @@ func (f EqualsFunc) Exec(fm *Formation) (interface{}, error) {
 	return v1 == v2, nil
 }
 
-func (r EqualsFunc) DependResource() []string {
+/*func (r EqualsFunc) DependResource() []string {
 	dps := []string{}
 	if r.Value1.Func != nil {
 		dps = append(dps, r.Value1.Func.DependResource()...)
@@ -90,7 +90,7 @@ func (r EqualsFunc) DependResource() []string {
 		dps = append(dps, r.Value1.Func.DependResource()...)
 	}
 	return dps
-}
+}*/
 
 var _ StringFunc = EqualsFunc{} // EqualsFunc must implement StringFunc
 var _ BoolFunc = EqualsFunc{}   // EqualsFunc must implement BoolFunc

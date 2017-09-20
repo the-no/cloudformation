@@ -55,8 +55,9 @@ func (f JoinFunc) Exec(fm *Formation) (interface{}, error) {
 
 	return "", nil
 }
-func (r JoinFunc) DependResource() []string {
+
+/*func (r JoinFunc) DependResource() []string {
 	return nil
 }
-
+*/
 var _ StringFunc = JoinFunc{} // JoinFunc must implement StringFunc
