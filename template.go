@@ -62,8 +62,10 @@ func (t *Template) CreateFormation(req *Request, s *session.Session) (*Formation
 				return nil, errors.New("Found Resource [" + d + "] Faild!")
 			}
 		}
-		fm.Resources[k] = NewResourceUnit(fm, k, r)
+		fm.Resources[k] = newResourceUnit(fm, k, r)
 	}
+
+	fm.depends()
 	return fm, nil
 }
 

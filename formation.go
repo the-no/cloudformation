@@ -24,13 +24,23 @@ type Formation struct {
 }
 
 func (self *Formation) StartResourceUnits() {
+
+	var anyerr error
 	var wg sync.WaitGroup
 	for _, v := range self.Resources {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			startResourceUnit(self, v)
+			if err := createResourceUnit(self, v); err != nil {
+				anyerr = err
+			}
 		}()
+	}
+
+	if anyerr != nil {
+		for _, r := range self.Callback {
+			fmt.Println(r)
+		}
 	}
 }
 
@@ -42,12 +52,20 @@ func (self *Formation) Condition(c string) bool {
 	return false
 }
 
+func (self *Formation) depends() {
+
+	for _, u := range self.Resources {
+		for _, d := range u.Resource.DependsOn {
+			u.Depends = append(u.Depends, self.Resources[d])
+		}
+	}
+}
+
 func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, error) {
 
 	sdata := []byte(s)
 	instring := false
 	l := newLexer(sdata)
-	//depend := []string{}
 	data := make([]byte, 0, len(sdata))
 
 	for ch := l.peekChar(); ch != 0; ch = l.peekChar() {
@@ -67,7 +85,6 @@ func (self *Formation) evalStructExpr(s json.RawMessage) ([]byte, error) {
 					}
 					vjson, err := json.Marshal(val)
 					data = append(data, vjson...)
-					//depend = append(depend, f.DependResource()...)
 				} else {
 					data = append(data, ch)
 				}
@@ -106,6 +123,7 @@ type ResourceUnit struct {
 	Result   interface{}
 	Callback bool
 	cond     *sync.Cond
+	Depends  []*ResourceUnit
 
 	Platform     string
 	Product      string
@@ -116,7 +134,7 @@ type ResourceUnit struct {
 	Ref    aws.Referencer
 }
 
-func NewResourceUnit(fm *Formation, name string, r *Resource) *ResourceUnit {
+func newResourceUnit(fm *Formation, name string, r *Resource) *ResourceUnit {
 	typinfo := strings.Split(r.Type, "::")
 	return &ResourceUnit{
 		Fm:           fm,
@@ -138,7 +156,7 @@ func (self *ResourceUnit) Wait() error {
 	return self.Err
 }
 
-func startResourceUnit(fm *Formation, r *ResourceUnit) error {
+func createResourceUnit(fm *Formation, r *ResourceUnit) error {
 	if cond, ok := fm.Conditions[r.Resource.Condition]; ok && !cond {
 		r.Err = errors.New("Condition [" + r.Resource.Condition + "] Is False OR Not Found In Create " + r.Name + "!")
 		r.Done = true
@@ -146,13 +164,11 @@ func startResourceUnit(fm *Formation, r *ResourceUnit) error {
 		return r.Err
 	}
 
-	for _, depend := range r.Resource.DependsOn {
-		if res, ok := fm.Resources[depend]; ok {
-			if err := res.Wait(); err != nil {
-				r.Err = errors.New(r.Name + " Depend On [" + depend + "] " + err.Error() + "!")
-				r.cond.Broadcast()
-				return r.Err
-			}
+	for _, depend := range r.Depends {
+		if err := depend.Wait(); err != nil {
+			r.Err = errors.New(r.Name + " Depend On [" + depend.Name + "] " + err.Error() + "!")
+			r.cond.Broadcast()
+			return r.Err
 		}
 	}
 
