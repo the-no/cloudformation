@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/the-no/aws-sdk-go/aws"
 	"github.com/the-no/aws-sdk-go/aws/session"
+	"strings"
 	"sync"
 )
 
@@ -106,17 +107,25 @@ type ResourceUnit struct {
 	Callback bool
 	cond     *sync.Cond
 
+	Platform     string
+	Product      string
+	ResourceType string
+
 	Input  interface{}
 	Output interface{}
 	Ref    aws.Referencer
 }
 
 func NewResourceUnit(fm *Formation, name string, r *Resource) *ResourceUnit {
+	typinfo := strings.Split(r.Type, "::")
 	return &ResourceUnit{
-		Fm:       fm,
-		Name:     name,
-		Resource: r,
-		cond:     sync.NewCond(&sync.Mutex{}),
+		Fm:           fm,
+		Name:         name,
+		Resource:     r,
+		cond:         sync.NewCond(&sync.Mutex{}),
+		Platform:     typinfo[0],
+		Product:      typinfo[1],
+		ResourceType: typinfo[2],
 	}
 }
 
@@ -153,7 +162,7 @@ func startResourceUnit(fm *Formation, r *ResourceUnit) error {
 		r.cond.Broadcast()
 	}
 
-	cli, err := fm.Platform.NewClinet("EC2", fm.Session)
+	cli, err := fm.Platform.NewClinet(r.Product, fm.Session)
 	if err != nil {
 		r.Err = errors.New("Create Request Clinet Failed. " + err.Error())
 		r.cond.Broadcast()
