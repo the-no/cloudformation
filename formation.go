@@ -176,12 +176,14 @@ func createResourceUnit(fm *Formation, r *ResourceUnit) error {
 	if err != nil {
 		r.Err = errors.New("Eval Struct Expr Failed. " + err.Error())
 		r.cond.Broadcast()
+		return r.Err
 	}
 
 	cli, err := fm.Platform.NewClinet(r.Product, fm.Session)
 	if err != nil {
 		r.Err = errors.New("Create Request Clinet Failed. " + err.Error())
 		r.cond.Broadcast()
+		return r.Err
 	}
 
 	r.Input, r.Output, r.Ref, err = cli.CreateResource(r.Resource.Type, data)
@@ -190,5 +192,5 @@ func createResourceUnit(fm *Formation, r *ResourceUnit) error {
 	}
 	r.cond.Broadcast()
 	fm.Callback = append(fm.Callback, r.Name)
-	return nil
+	return r.Err
 }
