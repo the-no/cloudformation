@@ -62,7 +62,7 @@ func (r RefFunc) Exec(fm *Formation) (interface{}, error) {
 
 	if v, ok := fm.Resources[r.Name]; ok {
 		if err := v.Wait(); err != nil {
-			return "", err
+			return v.Ref.Reference(), err
 		}
 		return r, nil
 	}

@@ -15,20 +15,20 @@ func GetAtt(resource, name string) *StringExpr {
 // See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
 type GetAttFunc struct {
 	Resource string
-	Name     string
+	Name     StringExpr
 }
 
 // MarshalJSON returns a JSON representation of the object
 func (f GetAttFunc) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		FnGetAtt []string `json:"Fn::GetAtt"`
-	}{FnGetAtt: []string{f.Resource, f.Name}})
+	}{FnGetAtt: [][]interface{}{f.Resource, f.Name}})
 }
 
 // UnmarshalJSON sets the object from the provided JSON representation
 func (f *GetAttFunc) UnmarshalJSON(data []byte) error {
 	v := struct {
-		FnGetAtt []string `json:"Fn::GetAtt"`
+		FnGetAtt [2]json.RawMessage `json:"Fn::GetAtt"`
 	}{}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
@@ -36,8 +36,13 @@ func (f *GetAttFunc) UnmarshalJSON(data []byte) error {
 	if len(v.FnGetAtt) != 2 {
 		return &json.UnsupportedValueError{Str: string(data)}
 	}
-	f.Resource = v.FnGetAtt[0]
-	f.Name = v.FnGetAtt[1]
+
+	if err := json.Unmarshal(v.FnGetAtt[0], &f.Resource); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(v.FnGetAtt[1], &f.Name); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -47,7 +52,21 @@ func (f GetAttFunc) String() *StringExpr {
 
 func (f GetAttFunc) Exec(fm *Formation) (interface{}, error) {
 
-	return "", nil
+	if v, ok := fm.Resources[f.Resource]; ok {
+		name := f.Name.Literal
+		if f.Name.Func != nil {
+			v, err := f.Name.Func.Exec(fm)
+			if err != nil {
+				return nil, err
+			}
+			name = v.(string)
+		}
+		if err := v.Wait(); err != nil {
+			return v.Attr(name), err
+		}
+		return r, nil
+	}
+	return nil, nil
 }
 
 /*func (r GetAttFunc) DependResource() []string {

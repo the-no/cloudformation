@@ -120,7 +120,6 @@ type ResourceUnit struct {
 	Name     string
 	Done     bool
 	Err      error
-	Result   interface{}
 	Callback bool
 	cond     *sync.Cond
 	Depends  []*ResourceUnit
@@ -129,9 +128,8 @@ type ResourceUnit struct {
 	Product      string
 	ResourceType string
 
-	Input  interface{}
-	Output interface{}
-	Ref    aws.Referencer
+	Attr aws.Attrabuter
+	Ref  aws.Referencer
 }
 
 func newResourceUnit(fm *Formation, name string, r *Resource) *ResourceUnit {
@@ -186,7 +184,7 @@ func createResourceUnit(fm *Formation, r *ResourceUnit) error {
 		return r.Err
 	}
 
-	r.Input, r.Output, r.Ref, err = cli.CreateResource(r.Resource.Type, data)
+	r.Ref, r.Attr, err = cli.CreateResource(r.Resource.Type, data)
 	if err != nil {
 		r.Err = errors.New(r.Name + "Create Resource Failed. " + err.Error())
 	}
