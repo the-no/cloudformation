@@ -96,9 +96,5 @@ func (f FindInMapFunc) Exec(fm *Formation) (v interface{}, err error) {
 
 }
 
-/*func (r FindInMapFunc) DependResource() []string {
-	return nil
-}*/
-
 var _ Stringable = FindInMapFunc{} // FindInMapFunc must implement Stringable
 var _ StringFunc = FindInMapFunc{} // FindInMapFunc must implement StringFunc

@@ -69,8 +69,4 @@ func (f GetAttFunc) Exec(fm *Formation) (interface{}, error) {
 	return nil, nil
 }
 
-/*func (r GetAttFunc) DependResource() []string {
-	return nil
-}*/
-
 var _ StringFunc = GetAttFunc{} // GetAttFunc must implement StringFunc

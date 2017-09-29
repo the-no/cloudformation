@@ -14,18 +14,6 @@ func Equalse() EqualsFunc {
 	}
 }
 
-// IfList returns a new instance of IfFunc for the provided string list expressions.
-//
-// See also: If
-/*func IfList(condition string, valueIfTrue, valueIfFalse StringListable) IfFunc {
-	return IfFunc{
-		list:         true,
-		Condition:    condition,
-		ValueIfTrue:  *valueIfTrue.StringList(),
-		ValueIfFalse: *valueIfFalse.StringList(),
-	}
-}*/
-
 // IfFunc represents an invocation of the Fn::If intrinsic.
 //
 // See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html
@@ -80,17 +68,6 @@ func (f EqualsFunc) Exec(fm *Formation) (interface{}, error) {
 	}
 	return v1 == v2, nil
 }
-
-/*func (r EqualsFunc) DependResource() []string {
-	dps := []string{}
-	if r.Value1.Func != nil {
-		dps = append(dps, r.Value1.Func.DependResource()...)
-	}
-	if r.Value2.Func != nil {
-		dps = append(dps, r.Value1.Func.DependResource()...)
-	}
-	return dps
-}*/
 
 var _ StringFunc = EqualsFunc{} // EqualsFunc must implement StringFunc
 var _ BoolFunc = EqualsFunc{}   // EqualsFunc must implement BoolFunc

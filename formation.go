@@ -38,8 +38,24 @@ func (self *Formation) StartResourceUnits() {
 	}
 
 	if anyerr != nil {
-		for _, r := range self.Callback {
-			fmt.Println(r)
+		self.Callback()
+	}
+}
+
+func (self *Formation) Callback() {
+	for _, rname := range self.Callback {
+		if r, ok := self.Resources[rname]; ok && r.Ref != nil {
+			cli, err := self.Platform.NewClinet(r.Product, self.Session)
+			if err != nil {
+				r.Err = errors.New("Delete Request Clinet Failed. " + err.Error())
+				r.cond.Broadcast()
+				return r.Err
+			}
+
+			r.Ref, r.Attr, err = cli.DeleteResource(r.Resource.Type, r.Ref)
+			if err != nil {
+				r.Err = errors.New(r.Name + "Delete Resource Failed. " + err.Error())
+			}
 		}
 	}
 }
@@ -188,7 +204,7 @@ func createResourceUnit(fm *Formation, r *ResourceUnit) error {
 	if err != nil {
 		r.Err = errors.New(r.Name + "Create Resource Failed. " + err.Error())
 	}
-	r.cond.Broadcast()
 	fm.Callback = append(fm.Callback, r.Name)
+	r.cond.Broadcast()
 	return r.Err
 }
